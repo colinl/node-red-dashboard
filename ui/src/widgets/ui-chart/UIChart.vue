@@ -134,7 +134,7 @@ export default {
     },
     created () {
         // Setup custom onMsgInput Handler & onLoad Handler
-        this.$dataTracker(this.id, this.onMsgInput, this.onLoad)
+        this.$dataTracker(this.id, this.onMsgInput, this.onLoad, this.onDynamicProperties)
     },
     mounted () {
         if (window.Cypress) {
@@ -170,7 +170,14 @@ export default {
         // Store resize observer for cleanup
         this.resizeObserver = resizeObserver
     },
-    methods: {
+    methods: {onDynamicProperties (msg) {
+            const updates = msg.ui_update
+            if (!updates) {
+                return
+            }
+            console.log(`onDynamicProperties ${JSON.stringify(updates)}`)
+            //this.updateDynamicProperty('options', updates.options)
+        },
         generateChartOptions () {
             const isRadial = this.props.xAxisType === 'radial'
 
@@ -489,8 +496,10 @@ export default {
                     }
                 }
             } else {
-                // no payload
-                console.log('have no payload')
+                // no payload, only an issue if msg.ui_update is not present
+                if (!msg.ui_update) {
+                    console.log('have no payload')
+                }
             }
             if (this.chartType === 'line' || this.chartType === 'area' || this.chartType === 'scatter') {
                 this.limitDataSize(options)
@@ -724,7 +733,6 @@ export default {
                     })
                 }
             }
-
             // apply data limtations to the vuex store
             this.$store.commit('data/restrict', {
                 widgetId: this.id,
