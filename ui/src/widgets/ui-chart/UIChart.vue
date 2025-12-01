@@ -137,7 +137,6 @@ export default {
         this.$dataTracker(this.id, this.onMsgInput, this.onLoad, this.onDynamicProperties)
     },
     mounted () {
-        //console.log(`Chart mounted ${this.props.label}: ${JSON.stringify(this.props)}`)
         if (window.Cypress) {
             // when testing, we expose the chart object to the window object
             // so we can do an end-to-end test and ensure the right data is applied
@@ -151,18 +150,14 @@ export default {
         const chart = echarts.init(el)
 
         // Initialize with basic option structure
-        let options = this.generateChartOptions()
+        const options = this.generateChartOptions()
         chart.setOption(options)
 
         // merge in any updates provided via ui_update.chartOptions
         const chartOptions = this.props.chartOptions
         if (chartOptions) {
-            console.log(`chartOptions: ${JSON.stringify(chartOptions)}`)
-            // it is necessary to get the options again as this technique assumes the format that is returned
-            // by getOption()
-            options = chart.getOption()
-            this.mergeLeaves(options, chartOptions)
-            chart.setOption(options)
+            // pass the options to the chart
+            chart.setOption(chartOptions)
         }
 
         // don't want chart to be reactive, so we can use shallowRef
@@ -189,86 +184,9 @@ export default {
                 return
             }
             if (updates.chartOptions) {
-                console.log(`onDynamicProperties ${JSON.stringify(updates)}`)
-                const options = this.chart.getOption()
-                const elements = ['color', 'yAxis','grid']
-                elements.forEach((element) => {
-                    console.log(`original ${element}: ${JSON.stringify(options[element])}`)
-                })
-                // merge the updates into the existing chart options
-                this.mergeLeaves(options, updates.chartOptions)
-                this.chart.setOption(options)
-                elements.forEach((element) => {
-                    console.log(`updated ${element}: ${JSON.stringify(this.chart.getOption()[element])}`)
-                })
+                // merge the updates into the chart
+                this.chart.setOption(updates.chartOptions)
             }
-        },
-        mergeLeaves(original, updates) {
-            /**
-             * Function is passed arbitrary objects original and updates.
-             * It deeply merges updates into original, applying changes only at leaf level
-             * and creating nested objects as needed
-             * It modifies original in place and also returns the modified original
-            */
-            for (const key in updates) {
-                const uVal = updates[key]
-                const oVal = original[key]
-
-                // Merge plain objects
-                if (
-                    uVal &&
-                    typeof uVal === 'object' &&
-                    !Array.isArray(uVal) &&
-                    oVal &&
-                    typeof oVal === 'object' &&
-                    !Array.isArray(oVal)
-                ) {
-                    this.mergeLeaves(oVal, uVal)
-
-                    // Merge arrays
-                } else if (Array.isArray(uVal)) {
-                    if (!Array.isArray(oVal)) {
-                        original[key] = [...uVal]
-                    } else {
-                        original[key] = this.mergeLeavesArray(oVal, uVal)
-                    }
-
-                    // Leaf assignment
-                } else {
-                    original[key] = uVal
-                }
-            }
-            return original
-        },
-        mergeLeavesArray(originalArr, updatesArr) {
-            const result = [...originalArr]
-
-            for (let i = 0; i < updatesArr.length; i++) {
-                const uVal = updatesArr[i]
-                const oVal = result[i]
-
-                // Merge objects
-                if (
-                    uVal &&
-                    typeof uVal === 'object' &&
-                    !Array.isArray(uVal) &&
-                    oVal &&
-                    typeof oVal === 'object' &&
-                    !Array.isArray(oVal)
-                ) {
-                    this.mergeLeaves(oVal, uVal)
-
-                    // Merge nested arrays
-                } else if (Array.isArray(uVal) && Array.isArray(oVal)) {
-                    result[i] = this.mergeLeavesArray(oVal, uVal)
-
-                    // Leaf assignment
-                } else {
-                    result[i] = uVal
-                }
-            }
-
-            return result
         },
         generateChartOptions () {
             const isRadial = this.props.xAxisType === 'radial'
