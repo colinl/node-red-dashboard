@@ -134,9 +134,13 @@ module.exports = function (RED) {
 
                 const updates = msg.ui_update
                 if (updates) {
-                    if (typeof updates.options !== 'undefined') {
-                        // dynamically set "options" property
-                        statestore.set(group.getBase(), node, msg, 'options', updates.options)
+                    //console.log(`updates: ${JSON.stringify(updates)}`)
+                    if (typeof updates.chartOptions !== 'undefined') {
+                        // merge chart options specified here in with any others previously set
+                        const currentOptions = statestore.getProperty(node.id, 'chartOptions') ?? {}
+                        console.log(`currentOptions: ${JSON.stringify(currentOptions)}`)
+                        statestore.set(group.getBase(), node, msg, 'chartOptions', {...currentOptions, ...updates.chartOptions})
+                        console.log(`new options: ${JSON.stringify(statestore.getProperty(node.id, 'chartOptions'))}`)
                     }
                 }
 
