@@ -137,7 +137,7 @@ export default {
         this.$dataTracker(this.id, this.onMsgInput, this.onLoad, this.onDynamicProperties)
     },
     mounted () {
-        console.log(`Chart mounted ${this.props.label}: ${JSON.stringify(this.props)}`)
+        //console.log(`Chart mounted ${this.props.label}: ${JSON.stringify(this.props)}`)
         if (window.Cypress) {
             // when testing, we expose the chart object to the window object
             // so we can do an end-to-end test and ensure the right data is applied
@@ -151,10 +151,19 @@ export default {
         const chart = echarts.init(el)
 
         // Initialize with basic option structure
-        const options = this.generateChartOptions()
-        console.log(`mounted: options.grid: ${JSON.stringify(options.grid)}`)
+        let options = this.generateChartOptions()
         chart.setOption(options)
-        console.log(`mounted, after setOption: options.grid: ${JSON.stringify(chart.getOption().grid)}`)
+
+        // merge in any updates provided via ui_update.chartOptions
+        const chartOptions = this.props.chartOptions
+        if (chartOptions) {
+            console.log(`chartOptions: ${JSON.stringify(chartOptions)}`)
+            // it is necessary to get the options again as this technique assumes the format that is returned
+            // by getOption()
+            options = chart.getOption()
+            this.mergeLeaves(options, chartOptions)
+            chart.setOption(options)
+        }
 
         // don't want chart to be reactive, so we can use shallowRef
         this.chart = shallowRef(chart)
